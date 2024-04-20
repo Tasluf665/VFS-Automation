@@ -40,6 +40,9 @@ const captchaSolver = async (page) => {
                 await page.$eval('.captcha-container .form-control', (input, value) => input.value = value, res.data);
                 await page.click('.col-12.text-center.mt-3.pb-3 button:nth-child(2)');
 
+                await page.waitForTimeout(15000);
+                appointment(page)
+
             })
 
 
@@ -50,11 +53,24 @@ const captchaSolver = async (page) => {
     }
 }
 
+const appointment = async (page) => {
+    await page.click('button.btn.outline-primary');
+    await page.waitForTimeout(5000);
+
+    await page.click('.xselect-input-group');
+    await page.waitForTimeout(5000);
+
+    await page.$eval('#mega-search-megaEmbassy', (input, value) => input.value = value, process.env.VFS_COUNTRY_SEARCH);
+    await page.waitForTimeout(5000);
+
+    await page.click('.xselect-list-item');
+}
+
 async function login(url) {
     console.log("Loging...")
     const browser = await puppeteer.launch({
         headless: false,
-        executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        executablePath: process.env.CHROME_EXECUTABLE_PATH,
         timeout: 0,
         ignoreHTTPSErrors: true,
         defaultViewport: null,
