@@ -54,16 +54,37 @@ const captchaSolver = async (page) => {
 }
 
 const appointment = async (page) => {
+    console.log("Redirect into legalisation page")
+    await page.goto('https://keliauk.urm.lt/en/legalisation');
+    await page.waitForTimeout(15000);
+
+    console.log("Click into Register new visit")
     await page.click('button.btn.outline-primary');
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(15000);
 
-    await page.click('.xselect-input-group');
-    await page.waitForTimeout(5000);
+    console.log("Click into next btn")
+    await page.click('#be1c2070729538c4196e7274ed27309d7');
+    await page.waitForTimeout(15000);
 
-    await page.$eval('#mega-search-megaEmbassy', (input, value) => input.value = value, process.env.VFS_COUNTRY_SEARCH);
-    await page.waitForTimeout(5000);
+    console.log("Select Participate")
+    // await page.click('input.xradio-card-control[value="WithFiz"]');
+    const [element] = await page.$x('//*[@id="content"]/div/form/div[1]/div[1]/div[2]/label');
+    await element.click();
+    await page.waitForTimeout(10000);
 
-    await page.click('.xselect-list-item');
+    console.log("Click into next btn2")
+    await page.click('button.btn.btn-primary.rounded-pill');
+    await page.waitForTimeout(10000);
+
+    const [element2] = await page.$x('//*[@id="content"]/div/form/div[1]/div/div/div/div[1]/label/div[1]/div/div');
+    await element2.click();
+    await page.waitForTimeout(10000);
+
+    console.log("Click into next btn3")
+    await page.click('button.btn.btn-primary.rounded-pill');
+    await page.waitForTimeout(10000);
+
+
 }
 
 async function login(url) {
