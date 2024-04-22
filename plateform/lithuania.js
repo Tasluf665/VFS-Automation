@@ -146,8 +146,8 @@ async function formFillUpPage(page) {
 
 async function visitTypePage(page) {
     try {
-        await page.waitForSelector('input[value="207"]')
-        await page.click('input[value="207"]');
+        await page.waitForSelector('input[value="206"]')
+        await page.click('input[value="206"]');
 
         await page.waitForSelector('button[data-submit-url="/en/actions/legalisation/insert"]')
         await page.click('button[data-submit-url="/en/actions/legalisation/insert"]');
