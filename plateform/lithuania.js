@@ -51,9 +51,6 @@ const captchaSolver = async (page) => {
                     captchaSolver(page)
                 }
 
-                // await page.click('button.btn.primary.rounded-pill[data-submit-url="/en/actions/user/login/login"]');
-
-
             })
 
 
@@ -125,7 +122,7 @@ const appointmentConfirm = async (page) => {
     await page.waitForSelector('input[name="AgreeToTermsOfRegistration"]');
     await page.click('input[name="AgreeToTermsOfRegistration"]');
 
-    await captchaSolver2(page)
+    // await captchaSolver2(page)
 }
 
 const selectAppointmentDate = async (page) => {
@@ -192,11 +189,11 @@ const appointment = async (page) => {
     }
 
     try {
-        await page.waitForSelector('input[value="207"]')
-        await page.click('input[value="207"]');
+        await page.waitForSelector('input[value="206"]')
+        await page.click('input[value="206"]');
     } catch (error) {
-        await page.waitForSelector('input[value="207"]')
-        await page.click('input[value="207"]');
+        await page.waitForSelector('input[value="206"]')
+        await page.click('input[value="206"]');
     }
 
     console.log("Click into next btn3")
@@ -256,7 +253,7 @@ const appointment = async (page) => {
         await page.click('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]');
     }
 
-    selectAppointmentDate(page)
+    // selectAppointmentDate(page)
 }
 
 async function login(url) {
