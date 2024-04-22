@@ -7,6 +7,8 @@ var FormData = require('form-data');
 const Captcha = require("@2captcha/captcha-solver")
 const solver = new Captcha.Solver(process.env.CAPTCHA_API_KEY)
 
+let browser;
+
 const captchaSolver = async (page) => {
     try {
         console.log('resolving captcha ----- ')
@@ -62,6 +64,86 @@ const captchaSolver = async (page) => {
     }
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const selectAppointmentDate = async (page) => {
+    try {
+        await page.waitForSelector('#date')
+        await page.click('#date');
+
+        await page.waitForSelector('.xdate-day-number:not(.disabled-day):not(.day-reserved)')
+        await page.click('.xdate-day-number:not(.disabled-day):not(.day-reserved)');
+
+        await page.waitForSelector('.xtime-circle')
+        await page.click('.xtime-circle');
+
+        await page.waitForSelector('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]')
+        await page.click('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]');
+    } catch (error) {
+        console.log(error.message)
+        await sleep(60000);
+        await page.reload();
+        selectAppointmentDate(page)
+    }
+
+}
+
+const selectAppointmentDate2 = async (page) => {
+    const jsonPage = await browser.newPage();
+    await jsonPage.goto('https://keliauk.urm.lt/en/legalisation/getReserved/129450?dayFrom=2024-04-01&dayTo=2024-06-09')
+
+    const refreshPage = async () => {
+        await jsonPage.reload();
+        await jsonPage.waitForSelector('pre')
+        const jsonResponse = await jsonPage.evaluate(() => {
+            return JSON.parse(document.querySelector('pre').textContent);
+        });
+
+        for (const key in jsonResponse) {
+
+            let mainDate
+            if (jsonResponse[key]['disabled'] == false) {
+                mainDate = key;
+                return mainDate;
+            }
+        }
+
+    }
+
+    await refreshPage();
+
+    while (true) {
+        let mainDate = await refreshPage();
+        if (mainDate) {
+            await jsonPage.close()
+            console.log(mainDate);
+            try {
+                await page.waitForSelector('#date')
+                await page.click('#date');
+                await page.type('#date', mainDate);
+                await page.click('body');
+
+                await page.waitForSelector('.xtime-circle')
+                await page.click('.xtime-circle');
+
+                await page.waitForSelector('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]')
+                await page.click('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]');
+            } catch (error) {
+
+            }
+            break;
+        }
+        await sleep(60000);
+    }
+
+    // browser.close();
+
+
+
+}
+
 const appointment = async (page) => {
     console.log("Click into Register new visit")
     try {
@@ -72,7 +154,6 @@ const appointment = async (page) => {
         await page.click('button.btn.outline-primary.rounded-pill[data-url="/en/legalisation/wizard/1/-1"]');
     }
 
-
     console.log("Click into next btn")
     try {
         await page.waitForSelector('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]')
@@ -81,7 +162,6 @@ const appointment = async (page) => {
         await page.waitForSelector('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]')
         await page.click('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]');
     }
-
 
     console.log("Select Participate")
     try {
@@ -94,8 +174,6 @@ const appointment = async (page) => {
         await secondElement[1].click();
     }
 
-
-
     console.log("Click into next btn2")
     try {
         await page.waitForSelector('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]')
@@ -106,11 +184,11 @@ const appointment = async (page) => {
     }
 
     try {
-        await page.waitForSelector('input[value="206"]')
-        await page.click('input[value="206"]');
+        await page.waitForSelector('input[value="207"]')
+        await page.click('input[value="207"]');
     } catch (error) {
-        await page.waitForSelector('input[value="206"]')
-        await page.click('input[value="206"]');
+        await page.waitForSelector('input[value="207"]')
+        await page.click('input[value="207"]');
     }
 
     console.log("Click into next btn3")
@@ -170,27 +248,12 @@ const appointment = async (page) => {
         await page.click('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]');
     }
 
-    try {
-        await page.waitForSelector('input.form-control[is="control-picker-date-remote"]')
-        console.log("Click into next btn4")
-        await page.click('input.form-control[is="control-picker-date-remote"]');
-    } catch (error) {
-        console.log("Click into next btn4")
-        await page.click('input.form-control[is="control-picker-date-remote"]');
-    }
-
-    try {
-        await page.click('#date');
-        await page.type('#date', '2024-04-10');
-        await page.click('body');
-    } catch (error) {
-
-    }
+    selectAppointmentDate(page)
 }
 
 async function login(url) {
     console.log("Loging...")
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
         headless: false,
         executablePath: process.env.CHROME_EXECUTABLE_PATH,
         timeout: 0,
