@@ -64,8 +64,68 @@ const captchaSolver = async (page) => {
     }
 }
 
+const captchaSolver2 = async (page) => {
+    try {
+        console.log('resolving second captcha ----- ')
+        await page.waitForSelector('#captcha_img');
+
+        const src = await page.evaluate(() => {
+            const imgElement = document.querySelector('#captcha_img');
+            return imgElement.src;
+        });
+        console.log('Image src:', src);
+
+        console.log('Downloading captcha image...');
+        const captchaImage = await page.evaluate(async (src) => {
+            const response = await fetch(src);
+            const blob = await response.blob();
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        }, src);
+        console.log(captchaImage.substring(1, 30), "....captchaData");
+
+        solver.imageCaptcha({
+            body: captchaImage,
+        })
+            .then(async (res) => {
+                console.log(res);
+                try {
+                    await page.$eval('input[name="captcha"]', (input, value) => input.value = value, res.data);
+                    await page.click('button[data-submit-url="/en/actions/legalisation/finalInsert"]');
+
+                    await page.waitForSelector('.alert-body');
+                    const innerText = await page.$eval('.alert-body-content', element => element.innerText.trim());
+
+                    if (innerText === "Incorrect security code") {
+                        await page.$eval('a.reset-captcha-btn', element => element.click());
+                        await page.waitForTimeout(10000);
+                        captchaSolver2(page);
+                    }
+                } catch (error) {
+                    captchaSolver2(page);
+                }
+            })
+
+
+        console.log("Captcha Finished");
+
+    } catch (error) {
+        console.log("Captcha Error: ", error.message)
+    }
+}
+
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const appointmentConfirm = async (page) => {
+    await page.waitForSelector('input[name="AgreeToTermsOfRegistration"]');
+    await page.click('input[name="AgreeToTermsOfRegistration"]');
+
+    await captchaSolver2(page)
 }
 
 const selectAppointmentDate = async (page) => {
@@ -81,66 +141,14 @@ const selectAppointmentDate = async (page) => {
 
         await page.waitForSelector('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]')
         await page.click('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]');
+
+        await appointmentConfirm(page)
     } catch (error) {
         console.log(error.message)
         await sleep(60000);
         await page.reload();
         selectAppointmentDate(page)
     }
-
-}
-
-const selectAppointmentDate2 = async (page) => {
-    const jsonPage = await browser.newPage();
-    await jsonPage.goto('https://keliauk.urm.lt/en/legalisation/getReserved/129450?dayFrom=2024-04-01&dayTo=2024-06-09')
-
-    const refreshPage = async () => {
-        await jsonPage.reload();
-        await jsonPage.waitForSelector('pre')
-        const jsonResponse = await jsonPage.evaluate(() => {
-            return JSON.parse(document.querySelector('pre').textContent);
-        });
-
-        for (const key in jsonResponse) {
-
-            let mainDate
-            if (jsonResponse[key]['disabled'] == false) {
-                mainDate = key;
-                return mainDate;
-            }
-        }
-
-    }
-
-    await refreshPage();
-
-    while (true) {
-        let mainDate = await refreshPage();
-        if (mainDate) {
-            await jsonPage.close()
-            console.log(mainDate);
-            try {
-                await page.waitForSelector('#date')
-                await page.click('#date');
-                await page.type('#date', mainDate);
-                await page.click('body');
-
-                await page.waitForSelector('.xtime-circle')
-                await page.click('.xtime-circle');
-
-                await page.waitForSelector('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]')
-                await page.click('button.btn.btn-primary.rounded-pill[data-submit-url="/en/actions/legalisation/insert"]');
-            } catch (error) {
-
-            }
-            break;
-        }
-        await sleep(60000);
-    }
-
-    // browser.close();
-
-
 
 }
 
