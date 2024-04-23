@@ -83,6 +83,7 @@ const appointmentConfirm = async (page) => {
         }
     } catch (error) {
         console.log("appointmentConfirm Error: ", error.message);
+        await sleep(60000);
         await page.reload();
         await appointmentConfirm(page)
     }
@@ -139,6 +140,7 @@ async function formFillUpPage(page) {
         await selectAppointmentDate(page)
     } catch (error) {
         console.log("formFillUpPage Error: ", error.message);
+        await sleep(60000);
         await page.reload();
         await formFillUpPage(page)
     }
@@ -146,8 +148,8 @@ async function formFillUpPage(page) {
 
 async function visitTypePage(page) {
     try {
-        await page.waitForSelector('input[value="206"]')
-        await page.click('input[value="206"]');
+        await page.waitForSelector('input[value="207"]')
+        await page.click('input[value="207"]');
 
         await page.waitForSelector('button[data-submit-url="/en/actions/legalisation/insert"]')
         await page.click('button[data-submit-url="/en/actions/legalisation/insert"]');
@@ -155,6 +157,7 @@ async function visitTypePage(page) {
         await formFillUpPage(page)
     } catch (error) {
         console.log("visitTypePage Error: ", error.message);
+        await sleep(60000);
         await page.reload();
         await visitTypePage(page)
     }
@@ -172,6 +175,7 @@ async function participatePage(page) {
         await visitTypePage(page)
     } catch (error) {
         console.log("participatePage Error: ", error.message);
+        await sleep(60000);
         await page.reload();
         await participatePage(page)
     }
@@ -185,6 +189,7 @@ async function consularPage(page) {
         await participatePage(page)
     } catch (error) {
         console.log("consularPage Error: ", error.message);
+        await sleep(60000);
         await page.reload();
         await consularPage(page)
     }
@@ -198,6 +203,7 @@ async function registerNewVisitPage(page) {
         await consularPage(page)
     } catch (error) {
         console.log("registerNewVisitPage Error: ", error.message);
+        await sleep(60000);
         await page.reload();
         await registerNewVisitPage(page)
     }
@@ -229,6 +235,7 @@ async function login(page) {
         return page
     } catch (error) {
         console.log("Loging Error: ", error.message);
+        await sleep(60000);
         await page.reload();
         await login(page)
     }
@@ -247,6 +254,7 @@ async function legalisationLoginPage(page, url) {
         await login(page)
     } catch (error) {
         console.log("legalisationLoginPage Error: ", error.message);
+        await sleep(60000);
         await page.reload();
         await legalisationLoginPage(page)
     }
