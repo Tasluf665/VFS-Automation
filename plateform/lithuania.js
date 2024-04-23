@@ -1,10 +1,15 @@
 // require('dotenv').config({ path: `../.env` });
+//https://blog.nashtechglobal.com/mastering-cloudflare-captcha-bypass-in-automation/
+//https://www.npmjs.com/package/2captcha-ts#cloudflare-turnstile
+//https://github.com/2captcha/2captcha-php/blob/master/examples/turnstile_options.php
+//https://2captcha.com/api-docs/get-task-result
+
 require('events').EventEmitter.defaultMaxListeners = 15;
 const fs = require('fs');
 const puppeteer = require("puppeteer");
-const axios = require('axios');
-var FormData = require('form-data');
 const Captcha = require("@2captcha/captcha-solver")
+const { Solver } = require('2captcha-ts');
+const { readFileSync } = require('fs');
 const solver = new Captcha.Solver(process.env.CAPTCHA_API_KEY)
 
 let browser;
@@ -47,6 +52,24 @@ const captchaSolver = async (page) => {
     }
 }
 
+const checkIpBlock = async (page) => {
+    try {
+        await page.waitForSelector('.fw-700.mt-3')
+        const innerText = await page.evaluate(() => {
+            const element = document.querySelector('.fw-700.mt-3');
+            return element.innerText;
+        });
+
+        if (innerText.trim() === "Registracija naujam vizitui negalima") {
+            lithuania()
+        }
+    } catch (error) {
+
+    }
+
+
+}
+
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -64,13 +87,13 @@ const appointmentConfirm = async (page) => {
 
     await captchaSolver(page)
 
-    try {
-        await page.click('button[data-submit-url="/en/actions/legalisation/finalInsert"]');
-    } catch (error) {
-        console.log("appointmentConfirm Error: ", error.message);
-        await page.reload();
-        await appointmentConfirm(page)
-    }
+    // try {
+    //     await page.click('button[data-submit-url="/en/actions/legalisation/finalInsert"]');
+    // } catch (error) {
+    //     console.log("appointmentConfirm Error: ", error.message);
+    //     await page.reload();
+    //     await appointmentConfirm(page)
+    // }
 
     try {
         await page.waitForSelector('.alert-body');
@@ -156,6 +179,8 @@ async function visitTypePage(page) {
 
         await formFillUpPage(page)
     } catch (error) {
+        checkIpBlock(page);
+
         console.log("visitTypePage Error: ", error.message);
         await sleep(60000);
         await page.reload();
@@ -215,21 +240,22 @@ async function login(page) {
         await page.$eval('input.form-control[is="text-mail"]', (input, value) => input.value = value, process.env.VFS_EMAIL);
         await page.$eval('input[type="password"]', (input, value) => input.value = value, process.env.VFS_PASSWORD);
 
+
         console.log("Entering captcha solving...")
         await captchaSolver(page);
 
         try {
-            await page.waitForSelector('button.btn.primary.rounded-pill[data-submit-url="/en/actions/user/login/login"]')
-            await page.$eval('button.btn.primary.rounded-pill[data-submit-url="/en/actions/user/login/login"]', element => element.click())
+            await page.waitForSelector('button[data-submit-url="/en/actions/user/login/login"]')
+            await page.click('button[data-submit-url="/en/actions/user/login/login"]')
 
-            await page.waitForSelector('button.btn.outline-primary.rounded-pill[data-url="/en/legalisation/wizard/1/-1"]')
+            await page.waitForSelector('button[data-url="/en/legalisation/wizard/1/-1"]')
             console.log("Captcha Finished");
 
             await registerNewVisitPage(page)
         } catch (error) {
-            await page.$eval('a.reset-captcha-btn', element => element.click());
-            await page.waitForTimeout(10000);
-            await login(page)
+            await page.click('a.reset-captcha-btn');
+            await sleep(10000);
+            await login(page);
         }
 
         return page
@@ -243,13 +269,10 @@ async function login(page) {
 
 async function legalisationLoginPage(page, url) {
     try {
-        page.setDefaultNavigationTimeout(0);
-        await page.goto(url, {
-            waitUntil: 'load', timeout: 0
-        });
+        await page.goto(url);
 
-        await page.waitForSelector('button.btn.outline-primary.rounded-pill[is="button-url"]');
-        await page.click('button.btn.outline-primary.rounded-pill[is="button-url"]');
+        await page.locator('button[data-url="/en/user/login"]').wait();
+        await page.locator('button[data-url="/en/user/login"]').click();
 
         await login(page)
     } catch (error) {
@@ -260,12 +283,14 @@ async function legalisationLoginPage(page, url) {
     }
 }
 
-async function lunchBrowser() {
-    console.log("Loging...")
+async function lunchBrowser(url) {
+    console.log("Lunch browser...")
     browser = await puppeteer.launch({
         headless: false,
-        executablePath: process.env.CHROME_EXECUTABLE_PATH,
-        timeout: 0,
+        devtools: true,
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36', // User agent string
+        viewportWidth: 1920, // Viewport width
+        viewportHeight: 1080, // Viewport height
         ignoreHTTPSErrors: true,
         defaultViewport: null,
         args: [
@@ -277,17 +302,49 @@ async function lunchBrowser() {
         ]
     });
     let pages = await browser.pages()
-    let page = pages[0]
+    let page = pages[0];
 
-    return page
+    const preloadFile = readFileSync('./plateform/inject.js', 'utf8');
+    await page.evaluateOnNewDocument(preloadFile);
+
+    const tunelSolver = new Solver(process.env.CAPTCHA_API_KEY);
+
+    page.on('console', async (msg) => {
+        const txt = msg.text();
+        if (txt.includes('intercepted-params:')) {
+            const params = JSON.parse(txt.replace('intercepted-params:', ''));
+
+            try {
+                console.log(`Solving the captcha...`);
+                const res = await tunelSolver.cloudflareTurnstile(params);
+                console.log(`Solved the captcha ${res.id}`);
+                console.log(res);
+
+                await page.evaluate((token) => {
+                    cfCallback(token);
+                }, res.data);
+
+                await page.setExtraHTTPHeaders({ 'Accept-Language': 'en' });
+
+                console.log("Finish")
+
+                await legalisationLoginPage(page, url)
+            } catch (e) {
+                console.log(e.err);
+            }
+        }
+    });
+
+    await page.goto(url);
+
 }
 
 
 const lithuania = async () => {
     console.log('calling API ----- ')
     const url = "https://keliauk.urm.lt/en/legalisation"
-    let page = await lunchBrowser()
-    await legalisationLoginPage(page, url)
+    await lunchBrowser(url)
+
 }
 
 module.exports = lithuania
