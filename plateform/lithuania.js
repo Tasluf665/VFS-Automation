@@ -70,7 +70,6 @@ const checkIpBlock = async (page) => {
 
 }
 
-
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -289,8 +288,8 @@ async function lunchBrowser(url) {
         headless: false,
         devtools: true,
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36', // User agent string
-        viewportWidth: 1920, // Viewport width
-        viewportHeight: 1080, // Viewport height
+        viewportWidth: 1920,
+        viewportHeight: 1080,
         ignoreHTTPSErrors: true,
         defaultViewport: null,
         args: [
