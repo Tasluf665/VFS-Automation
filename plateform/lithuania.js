@@ -310,6 +310,8 @@ async function lunchBrowser(url) {
 
     const tunelSolver = new Solver(process.env.CAPTCHA_API_KEY);
 
+
+
     page.on('console', async (msg) => {
         const txt = msg.text();
         if (txt.includes('intercepted-params:')) {
@@ -327,7 +329,7 @@ async function lunchBrowser(url) {
 
                 await page.setExtraHTTPHeaders({ 'Accept-Language': 'en' });
 
-                console.log("Finish")
+                console.log("Finish");
 
                 await legalisationLoginPage(page, url)
             } catch (e) {
