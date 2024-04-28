@@ -61,6 +61,7 @@ const checkIpBlock = async (page) => {
         });
 
         if (innerText.trim() === "Registracija naujam vizitui negalima") {
+            browser.close();
             lithuania()
         }
     } catch (error) {
@@ -113,17 +114,17 @@ const appointmentConfirm = async (page) => {
 
 const selectAppointmentDate = async (page) => {
     try {
-        await page.waitForSelector('#date')
-        await page.click('#date');
+        await page.locator('#date').wait();
+        await page.locator('#date').click();
 
-        await page.waitForSelector('.xdate-day-number:not(.disabled-day):not(.day-reserved)')
-        await page.click('.xdate-day-number:not(.disabled-day):not(.day-reserved)');
+        await page.locator('.xdate-day-number:not(.disabled-day):not(.day-reserved)').wait();
+        await page.locator('.xdate-day-number:not(.disabled-day):not(.day-reserved)').click();
 
-        await page.waitForSelector('.xtime-circle')
-        await page.click('.xtime-circle');
+        await page.locator('.xtime-circle').wait();
+        await page.locator('.xtime-circle').click();
 
-        await page.waitForSelector('button[data-submit-url="/en/actions/legalisation/insert"]')
-        await page.click('button[data-submit-url="/en/actions/legalisation/insert"]');
+        await page.locator('button[data-submit-url="/en/actions/legalisation/insert"]').wait();
+        await page.locator('button[data-submit-url="/en/actions/legalisation/insert"]').click();
 
         await appointmentConfirm(page)
     } catch (error) {
@@ -269,8 +270,9 @@ async function login(page) {
 async function legalisationLoginPage(page, url) {
     try {
         await page.goto(url);
+        await
 
-        await page.locator('button[data-url="/en/user/login"]').wait();
+            await page.locator('button[data-url="/en/user/login"]').wait();
         await page.locator('button[data-url="/en/user/login"]').click();
 
         await login(page)
@@ -278,7 +280,7 @@ async function legalisationLoginPage(page, url) {
         console.log("legalisationLoginPage Error: ", error.message);
         await sleep(60000);
         await page.reload();
-        await legalisationLoginPage(page)
+        await legalisationLoginPage(page, url)
     }
 }
 
@@ -287,7 +289,7 @@ async function lunchBrowser(url) {
     browser = await puppeteer.launch({
         headless: false,
         devtools: true,
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36', // User agent string
+        // userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36', // User agent string
         viewportWidth: 1920,
         viewportHeight: 1080,
         ignoreHTTPSErrors: true,
@@ -334,7 +336,9 @@ async function lunchBrowser(url) {
         }
     });
 
-    await page.goto(url);
+    await legalisationLoginPage(page, url)
+
+    // await page.goto(url);
 
 }
 
