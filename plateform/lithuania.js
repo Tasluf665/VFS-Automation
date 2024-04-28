@@ -10,6 +10,12 @@ const puppeteer = require("puppeteer");
 const Captcha = require("@2captcha/captcha-solver")
 const { Solver } = require('2captcha-ts');
 const { readFileSync } = require('fs');
+const XLSX = require('xlsx');
+const workbook = XLSX.readFile('VFS.xlsx');
+const sheet_name_list = workbook.SheetNames;
+const excellData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]])[0];
+
+
 const solver = new Captcha.Solver(process.env.CAPTCHA_API_KEY)
 
 let browser;
@@ -87,13 +93,13 @@ const appointmentConfirm = async (page) => {
 
     await captchaSolver(page)
 
-    // try {
-    //     await page.click('button[data-submit-url="/en/actions/legalisation/finalInsert"]');
-    // } catch (error) {
-    //     console.log("appointmentConfirm Error: ", error.message);
-    //     await page.reload();
-    //     await appointmentConfirm(page)
-    // }
+    try {
+        await page.click('button[data-submit-url="/en/actions/legalisation/finalInsert"]');
+    } catch (error) {
+        console.log("appointmentConfirm Error: ", error.message);
+        await page.reload();
+        await appointmentConfirm(page)
+    }
 
     try {
         await page.waitForSelector('.alert-body');
@@ -139,12 +145,12 @@ const selectAppointmentDate = async (page) => {
 async function formFillUpPage(page) {
     try {
         await page.waitForSelector('input.form-control[is="number-phone"]')
-        await page.$eval('input.form-control[is="number-phone"]', (input, value) => input.value = value, process.env.FORM_PHONE);
-        await page.$eval('input.form-control[name="User[1][Name]"]', (input, value) => input.value = value, process.env.FORM_FIRST_NAME);
-        await page.$eval('input.form-control[name="User[1][Surname]"]', (input, value) => input.value = value, process.env.FORM_LAST_NAME);
-        await page.$eval('input.form-control[name="User[1][Email]"]', (input, value) => input.value = value, process.env.FORM_EMAIL);
-        await page.$eval('input.form-control[name="User[1][Phone]"]', (input, value) => input.value = value, process.env.FORM_USER_PHONE);
-        await page.$eval('textarea.form-control[name="User[1][Purpose]"]', (input, value) => input.value = value, process.env.FORM_Representation);
+        await page.$eval('input.form-control[is="number-phone"]', (input, value) => input.value = value, `+${excellData.Phone}`);
+        await page.$eval('input.form-control[name="User[1][Name]"]', (input, value) => input.value = value, excellData.First_Name);
+        await page.$eval('input.form-control[name="User[1][Surname]"]', (input, value) => input.value = value, excellData.Last_Name);
+        await page.$eval('input.form-control[name="User[1][Email]"]', (input, value) => input.value = value, excellData.Email);
+        await page.$eval('input.form-control[name="User[1][Phone]"]', (input, value) => input.value = value, `+${excellData.User_Phone}`);
+        await page.$eval('textarea.form-control[name="User[1][Purpose]"]', (input, value) => input.value = value, excellData.Representation);
 
         const CountrySelect1 = await page.$$('.xselect-display.form-control');
         await CountrySelect1[0].click();

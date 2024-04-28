@@ -26,6 +26,7 @@
     "puppeteer-extra-plugin-recaptcha": "3.3.3",
     "puppeteer-page-proxy": "1.2.8",
     "request": "^2.88.2",
-    "user-agents": "^1.1.169"
+    "user-agents": "^1.1.169",
+    "xlsx": "^0.18.5"
   }
 }
