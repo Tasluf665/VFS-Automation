@@ -16,7 +16,7 @@ const sheet_name_list = workbook.SheetNames;
 const excellData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]])[0];
 
 
-const solver = new Captcha.Solver(process.env.CAPTCHA_API_KEY)
+const solver = new Captcha.Solver(excellData.API_KEY)
 
 let browser;
 
@@ -177,8 +177,8 @@ async function formFillUpPage(page) {
 
 async function visitTypePage(page) {
     try {
-        await page.waitForSelector('input[value="207"]')
-        await page.click('input[value="207"]');
+        await page.waitForSelector('input[value="206"]')
+        await page.click('input[value="206"]');
 
         await page.waitForSelector('button[data-submit-url="/en/actions/legalisation/insert"]')
         await page.click('button[data-submit-url="/en/actions/legalisation/insert"]');
@@ -243,8 +243,8 @@ async function registerNewVisitPage(page) {
 async function login(page) {
     try {
         await page.waitForSelector('input.form-control[is="text-mail"]')
-        await page.$eval('input.form-control[is="text-mail"]', (input, value) => input.value = value, process.env.VFS_EMAIL);
-        await page.$eval('input[type="password"]', (input, value) => input.value = value, process.env.VFS_PASSWORD);
+        await page.$eval('input.form-control[is="text-mail"]', (input, value) => input.value = value, excellData.VFS_EMAIL);
+        await page.$eval('input[type="password"]', (input, value) => input.value = value, excellData.VFS_PASSWORD);
 
 
         console.log("Entering captcha solving...")
@@ -295,7 +295,6 @@ async function lunchBrowser(url) {
     browser = await puppeteer.launch({
         headless: false,
         devtools: true,
-        // userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36', // User agent string
         viewportWidth: 1920,
         viewportHeight: 1080,
         ignoreHTTPSErrors: true,
@@ -314,7 +313,7 @@ async function lunchBrowser(url) {
     const preloadFile = readFileSync('./plateform/inject.js', 'utf8');
     await page.evaluateOnNewDocument(preloadFile);
 
-    const tunelSolver = new Solver(process.env.CAPTCHA_API_KEY);
+    const tunelSolver = new Solver(excellData.API_KEY);
 
 
 
